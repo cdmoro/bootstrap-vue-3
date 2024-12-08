@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["env.d.ts", "**/*.spec.*", "**/*.test.*", "tests/utils.ts"],
+  "include": ["env.d.ts", "**/*.spec.*", "**/*.test.*", "tests/utils.ts", "src/plugins/**.ts"],
   "exclude": [],
   "compilerOptions": {
     "composite": true,

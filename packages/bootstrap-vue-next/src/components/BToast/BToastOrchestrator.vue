@@ -6,20 +6,30 @@
         :key="key"
         :class="value"
         class="toast-container position-fixed p-3"
+        style="width: var(--bs-toast-max-width)"
       >
         <TransitionGroup name="b-list">
           <span
-            v-for="toast in tools.toasts?.value.filter((el) => el.props.pos === key)"
-            :key="toast.props._self"
+            v-for="{
+              _self,
+              slots,
+              promise,
+              component: _component,
+              ...val
+            } in tools.toasts?.value.filter((el) => el.position === key)"
+            :key="_self"
           >
             <component
-              :is="toast.component ?? BToast"
-              v-bind="toast.props"
-              :model-value="toast.props._modelValue"
+              :is="_component ?? BToast"
+              v-bind="val"
               initial-animation
-              @update:model-value="tools.leave?.(toast.props._self)"
-              @hidden="tools.remove?.(toast.props._self)"
-            />
+              @hide="promise.resolve(true)"
+              @hidden="tools.remove?.(_self)"
+            >
+              <template v-for="(comp, slot) in slots" #[slot]="scope" :key="slot">
+                <component :is="comp" v-bind="scope" />
+              </template>
+            </component>
           </span>
         </TransitionGroup>
       </div>

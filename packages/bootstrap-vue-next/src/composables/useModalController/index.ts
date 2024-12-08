@@ -1,11 +1,23 @@
-import {inject} from 'vue'
+import {inject, ref} from 'vue'
 import {useSharedModalStack} from '../useModalManager'
 import {modalControllerPluginKey} from '../../utils/keys'
 
 export const useModalController = () => {
   const {lastStack, stack} = useSharedModalStack()
-
-  const modalControllerPlugin = inject(modalControllerPluginKey)
+  const noop = () => {}
+  const noopPromise = () => Promise.resolve(null)
+  const modalControllerPlugin = inject(modalControllerPluginKey, {
+    modals: ref(new Map()),
+    show: noopPromise,
+    confirm: noopPromise,
+    remove: noop,
+    leave: noop,
+  })
+  if (modalControllerPlugin.leave === noop) {
+    throw Error(
+      'useModalController() was called outside of the setup() function! or the plugin is not provided.'
+    )
+  }
 
   const hide = (trigger = '') => {
     if (lastStack?.value) {

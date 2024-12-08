@@ -42,7 +42,7 @@ describe('toast', () => {
     expect($header.classes().length).toBe(1)
     expect($header.find('strong').exists()).toBe(true)
     expect($header.find('strong').text()).toEqual('title')
-    expect($header.find('strong').classes()).toContain('me-auto')
+    expect($header.find('button').classes()).toContain('ms-auto')
     expect($header.find('button').exists()).toBe(true)
     expect($header.find('button').classes()).toContain('btn-close')
 

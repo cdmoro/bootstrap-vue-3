@@ -29,7 +29,9 @@ import {useDefaults} from '../../composables/useDefaults'
 import {useId} from '../../composables/useId'
 import {collapseInjectionKey} from '../../utils/keys'
 import type {BCollapseProps} from '../../types/ComponentProps'
-import {type showHideEmits, useShowHide} from '../../composables/useShowHide'
+import type {BCollapseEmits} from '../../types/ComponentEmits'
+import type {BCollapseSlots, ShowHideSlotsData} from '../../types/ComponentSlots'
+import {useShowHide} from '../../composables/useShowHide'
 
 defineOptions({
   inheritAttrs: false,
@@ -50,24 +52,9 @@ const _props = withDefaults(defineProps<Omit<BCollapseProps, 'modelValue'>>(), {
 
 const props = useDefaults(_props, 'BCollapse')
 
-const emit = defineEmits<showHideEmits>()
+const emit = defineEmits<BCollapseEmits>()
 
-type SharedSlotsData = {
-  hide: () => void
-  id: string
-  show: () => void
-  toggle: () => void
-  visible: boolean
-}
-
-defineSlots<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  default?: (props: SharedSlotsData) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  footer?: (props: SharedSlotsData) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  header?: (props: SharedSlotsData) => any
-}>()
+defineSlots<BCollapseSlots>()
 
 const modelValue = defineModel<Exclude<BCollapseProps['modelValue'], undefined>>({
   default: false,
@@ -155,12 +142,13 @@ const computedClasses = computed(() => ({
   'collapse-horizontal': props.horizontal,
 }))
 
-const sharedSlots = computed<SharedSlotsData>(() => ({
+const sharedSlots = computed<ShowHideSlotsData>(() => ({
   toggle,
   show,
   hide,
   id: computedId.value,
   visible: showRef.value,
+  active: isActive.value,
 }))
 
 defineExpose({

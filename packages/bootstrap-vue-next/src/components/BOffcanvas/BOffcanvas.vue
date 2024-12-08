@@ -34,7 +34,7 @@
               </h5>
               <template v-if="!props.noHeaderClose">
                 <BButton v-if="hasHeaderCloseSlot" v-bind="headerCloseAttrs" @click="hide('close')">
-                  <slot name="header-close" />
+                  <slot name="header-close" v-bind="sharedSlots" />
                 </BButton>
                 <BCloseButton
                   v-else
@@ -84,14 +84,14 @@ import {computed, type EmitFn, nextTick, ref, useTemplateRef, watch} from 'vue'
 import {useDefaults} from '../../composables/useDefaults'
 import {useId} from '../../composables/useId'
 import type {BOffcanvasProps} from '../../types/ComponentProps'
-import {BvTriggerableEvent} from '../../utils'
+import type {BOffcanvasEmits} from '../../types/ComponentEmits'
+import type {BOffcanvasSlots, BOffcanvasSlotsData} from '../../types/ComponentSlots'
 import BButton from '../BButton/BButton.vue'
 import BCloseButton from '../BButton/BCloseButton.vue'
 import ConditionalTeleport from '../ConditionalTeleport.vue'
 import {useSafeScrollLock} from '../../composables/useSafeScrollLock'
 import {isEmptySlot} from '../../utils/dom'
-import {type showHideEmits, useShowHide} from '../../composables/useShowHide'
-import type {Placement} from '../../types/Alignment'
+import {useShowHide} from '../../composables/useShowHide'
 
 // TODO once the responsive stuff may be implemented correctly,
 // What needs to occur is a fixing of the "body scrolling".
@@ -138,35 +138,9 @@ const _props = withDefaults(defineProps<Omit<BOffcanvasProps, 'modelValue'>>(), 
 })
 const props = useDefaults(_props, 'BOffcanvas')
 
-const emit = defineEmits<
-  {
-    close: [value: BvTriggerableEvent]
-    esc: [value: BvTriggerableEvent]
-    backdrop: [value: BvTriggerableEvent]
-    breakpoint: [value: BvTriggerableEvent]
-  } & showHideEmits
->()
+const emit = defineEmits<BOffcanvasEmits>()
 
-type SharedSlotsData = {
-  visible: boolean
-  placement: Placement
-  hide: (trigger?: string) => void
-}
-
-const slots = defineSlots<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'backdrop'?: (props: SharedSlotsData) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'default'?: (props: SharedSlotsData) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'footer'?: (props: SharedSlotsData) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'header'?: (props: SharedSlotsData) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'header-close'?: (props: Record<string, never>) => any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'title'?: (props: SharedSlotsData) => any
-}>()
+const slots = defineSlots<BOffcanvasSlots>()
 
 const modelValue = defineModel<Exclude<BOffcanvasProps['modelValue'], undefined>>({
   default: false,
@@ -279,10 +253,14 @@ const computedStyles = computed(() => ({
   width: props.width,
 }))
 
-const sharedSlots = computed<SharedSlotsData>(() => ({
-  visible: showRef.value,
+const sharedSlots = computed<BOffcanvasSlotsData>(() => ({
+  visible: isVisible.value,
   placement: props.placement,
   hide,
+  show,
+  toggle,
+  id: computedId.value,
+  active: trapActive.value,
 }))
 
 watch(smallerOrEqualToBreakpoint, (newValue) => {

@@ -19,15 +19,16 @@
 // Please do not commit this file
 import {computed, h, onMounted, ref} from 'vue'
 import {
-  BToast,
+  // BToast,
   type ColorVariant,
-  type OrchestratedToast,
+  // type OrchestratedToast,
   useToastController,
 } from 'bootstrap-vue-next'
 
 const {show, toasts} = useToastController()
 
-const firstRef = ref<OrchestratedToast>({
+// const firstRef = ref<OrchestratedToast>({
+const firstRef = ref({
   body: `${Math.random()}`,
 })
 
@@ -39,45 +40,37 @@ onMounted(() => {
 
 const showFns = {
   basicNoReactive: () => {
-    show?.({
-      props: {
-        value: true,
-        active: true,
-        title: 'foobar',
-      },
+    show({
+      modelValue: true,
+      active: true,
+      title: 'foobar',
     })
   },
   basicCustomComponent: () => {
-    show?.({
-      component: h(BToast, null, {default: () => 'foobar!'}),
-      props: {
-        value: true,
-        active: true,
-        variant: 'primary',
-      },
+    show({
+      slots: {default: h('div', null, {default: () => 'foobar!'})},
+      modelValue: true,
+      active: true,
+      variant: 'primary',
     })
   },
   simpleRefProps: () => {
-    show?.({
-      props: firstRef,
-    })
+    show(firstRef)
   },
   dynamicRefProps: () => {
-    show?.({
-      props: computed(() => ({
+    show(
+      computed(() => ({
         ...firstRef.value,
         variant: (Number.parseInt(firstRef.value.body?.charAt(2) ?? '0') % 2 === 0
           ? 'danger'
           : 'info') as ColorVariant,
-      })),
-    })
+      }))
+    )
   },
   getterFunction: () => {
-    show?.({
-      props: () => ({
-        title: firstRef.value.body,
-      }),
-    })
+    show(() => ({
+      title: firstRef.value.body,
+    }))
   },
   // Demonstration psuedocode, you can import a component and use it
   // importedComponent: () => {

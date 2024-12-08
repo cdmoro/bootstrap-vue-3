@@ -1,4 +1,4 @@
-import {markRaw, type Plugin, ref, toRef, watch} from 'vue'
+import {isReadonly, isRef, markRaw, type Plugin, ref, type Ref, toRef, toValue, watch} from 'vue'
 import {modalControllerPluginKey} from '../../utils/keys'
 import type {
   ControllerKey,
@@ -28,63 +28,86 @@ export const modalControllerPlugin: Plugin = {
       }
     }
 
-    const buildPrereqs = (id: string | undefined) =>
-      [buildPromise(), (id || Symbol('Modals controller')) as ControllerKey, true] as const
+    const create = (
+      obj: ModalOrchestratorShowParam = {},
+      isConfirm: boolean
+    ): Promise<boolean | null> => {
+      // if (isRef(obj)) obj.value.modelValue = ref(true)
+      // else if (typeof obj === 'object') obj.modelValue = ref(true)
+      const {component, slots} = toValue(obj)
+      if (component) {
+        if (isRef(obj)) obj.value.component = markRaw(component)
+        else if (typeof obj === 'object') obj.component = markRaw(component)
+      }
+      if (slots) {
+        if (isRef(obj)) obj.value.slots = markRaw(slots)
+        else if (typeof obj === 'object') obj.slots = markRaw(slots)
+      }
+      const resolvedProps = toRef(obj)
+      const _self = resolvedProps.value?.id || Symbol('Modals controller')
 
-    const show = (obj: ModalOrchestratorShowParam = {}): Promise<boolean | null> => {
-      const resolvedProps = toRef(obj.props)
+      const promise = buildPromise()
 
-      const [_promise, _self, _modelValue] = buildPrereqs(resolvedProps.value?.id)
+      const stop = watch(
+        resolvedProps,
+        (newValue) => {
+          const previous = modals.value.get(_self)
+          // if (!previous) return
+          const v = {
+            ...(previous || {}),
+          }
 
-      modals.value.set(_self, {
-        component: !obj.component ? undefined : markRaw(obj.component),
-        props: {...resolvedProps.value, _isConfirm: false, _promise, _modelValue},
-      })
+          if (newValue.props) {
+            Object.assign(v, newValue.props)
+            delete newValue.props
+          }
+          for (const key in newValue) {
+            v[key as keyof ModalOrchestratorShowParam] = toValue(
+              newValue[key as keyof ModalOrchestratorShowParam]
+            )
+          }
+          modals.value.set(_self, {
+            ...v,
+            ...(v.modelValue === undefined && {modelValue: true}),
+            // 'component': !v.component ? undefined : markRaw(v.component),
 
-      watch(resolvedProps, (newValue) => {
-        const previous = modals.value.get(_self)
-        if (!previous) return
-        modals.value.set(_self, {
-          component: !obj.component ? undefined : markRaw(obj.component),
-          props: {...previous.props, ...newValue},
-        })
-      })
+            'onUpdate:modelValue': (val: boolean) => {
+              newValue['onUpdate:modelValue']?.(val)
+              const {modelValue} = toValue(obj)
+              if (isRef(obj) && !isRef(modelValue)) obj.value.modelValue = val
+              if (isRef(modelValue) && !isReadonly(modelValue)) {
+                ;(modelValue as Ref<ModalOrchestratorMapValue['modelValue']>).value = val
+              }
+              if (val === false) {
+                stop()
+                modals.value.delete(_self)
+              }
+            },
+            isConfirm,
+            promise,
+          })
+        },
+        {
+          immediate: true,
+          deep: true,
+        }
+      )
 
-      return _promise.value
+      return promise.value
     }
-
-    const confirm = (obj: ModalOrchestratorShowParam = {}): Promise<boolean | null> => {
-      const resolvedProps = toRef(obj.props)
-
-      const [_promise, _self, _modelValue] = buildPrereqs(resolvedProps.value?.id)
-
-      modals.value.set(_self, {
-        component: !obj.component ? undefined : markRaw(obj.component),
-        props: {...resolvedProps.value, _isConfirm: true, _promise, _modelValue},
-      })
-
-      watch(resolvedProps, (newValue) => {
-        const previous = modals.value.get(_self)
-        if (!previous) return
-        modals.value.set(_self, {
-          component: !obj.component ? undefined : markRaw(obj.component),
-          props: {...previous.props, ...newValue},
-        })
-      })
-
-      return _promise.value
-    }
+    const show = (obj: ModalOrchestratorShowParam = {}): Promise<boolean | null> =>
+      create(obj, false)
+    const confirm = (obj: ModalOrchestratorShowParam = {}): Promise<boolean | null> =>
+      create(obj, true)
 
     /**
      * You can get the symbol param from the return value from the show method, or use props.id
      */
     const leave = (self: ControllerKey) => {
       const modal = modals.value.get(self)
-      if (!modal?.props) return
-      modal.props = {
-        ...modal.props,
-        _modelValue: false,
-      }
+
+      if (!modal) return
+      modal['onUpdate:modelValue']?.(false)
     }
 
     /**

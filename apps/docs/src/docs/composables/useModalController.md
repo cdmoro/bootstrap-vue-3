@@ -50,13 +50,12 @@ Showing a modal is done through the `show` or `confirm` method
 </template>
 
 <script setup lang="ts">
-const {confirm} = useModalController()
-const modal = useModal()
+const {confirm, show} = useModalController()
 
 const showExample = async () => {
-  const value = await confirm?.({props: {title: 'Hello World!'}})
+  const value = await confirm({title: 'Hello World!'})
 
-  modal.show?.({props: {title: `Promise resolved to ${value}`, variant: 'info'}})
+  show({title: `Promise resolved to ${value}`, variant: 'info'})
 }
 </script>
 ```
@@ -82,16 +81,15 @@ const showExample = async () => {
 const {show} = useModalController()
 
 const title = ref('Hello')
-
-setInterval(() => {
-  title.value = title.value === 'Hello' ? 'World' : 'Hello'
-}, 2500)
+onMounted(() => {
+  setInterval(() => {
+    title.value = title.value === 'Hello' ? 'World' : 'Hello'
+  }, 2500)
+})
 
 const showReactiveExample = () => {
-  show?.({
-    props: computed(() => ({
-      title: title.value,
-    })),
+  show({
+    title: title,
   })
 }
 </script>
@@ -103,6 +101,8 @@ const showReactiveExample = () => {
 ### Advanced Creation
 
 Using props can work for most situations, but it leaves some finer control to be desired. For instance, you can not add HTML to any slot value. This is where the `component` property comes into play. Using the `component` property, you can input the component to render. This can either be an imported SFC or an inline render function
+
+You can also use component slots to render what you want. This is done through the `slots` property. The `slots` property is an object that contains the slot name as the key and a render function or component as the value. The render function is passed a `scope` object that contains the slots scope.
 
 <HighlightCard>
   <BButton @click="showMeAdvancedExample">Click me</BButton>
@@ -120,23 +120,23 @@ const {show} = useModalController()
 const firstRef = ref<OrchestratedToast>({
   body: `${Math.random()}`,
 })
-
-setInterval(() => {
-  firstRef.value.body = `${Math.random()}`
-}, 1000)
-
+onMounted(() => {
+  setInterval(() => {
+    firstRef.value.body = `${Math.random()}`
+  }, 1000)
+})
 const showMeAdvancedExample = () => {
-  show?.({
-    props: () => ({
-      body: firstRef.value.body,
-    }),
-    component: h(BModal, null, {default: () => `custom ${firstRef.value.body}`}),
+  show({
+    slots: {
+      default: (scope) =>
+        h('div', null, {default: () => `custom ${firstRef.value.body} - ${scope.visible}`}),
+    },
   })
 
   // Demonstration psuedocode, you can import a component and use it
   // const importedComponent = () => {
-  //   show?.({
-  //     component: import('./MyModalComponent.vue'),
+  //   show({
+  //     component: (await import('./TestModal.vue')).default,
   //   })
   // }
 }
@@ -245,29 +245,31 @@ onMounted(() => {
 })
 
 const showExample = async () => {
-  const value = await confirm?.({ props: { title: 'Hello World!' } })
+  const value = await confirm({ body: 'Hello World!' })
 
-  modal.show?.({ props: { title: `Promise resolved to ${value}`, variant: 'info' } })
+  show({ body: `Promise resolved to ${value}`, variant: 'info' })
 }
 
 const showReactiveExample = () => {
-  show?.({
-    props: computed(() => ({
-      title: title.value
-    }))
+  show({
+      title: title,
   })
 }
 
+const firstRef = ref<OrchestratedToast>({
+  body: `${Math.random()}`,
+})
+onMounted(() => {
+  setInterval(() => {
+    firstRef.value.body = `${Math.random()}`
+  }, 1000)
+})
+
 const showMeAdvancedExample = () => {
-  show?.({
-    props: () => ({
-      body: title.value,
-    }),
-    component: computed(() =>
-      title.value === 'Hello'
-        ? BModal
-        : h(BModal, null, {default: () => `custom ${title.value}`})
-    ),
+  show({
+    slots: {
+      default: (scope) => h('div', null, {default: () => `custom ${firstRef.value.body} - ${scope.visible}`}),
+    },
   })
 }
 </script>

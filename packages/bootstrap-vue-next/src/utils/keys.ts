@@ -18,10 +18,12 @@ import type {
   ControllerKey,
   ModalOrchestratorMapValue,
   ModalOrchestratorShowParam,
+  PopoverOrchestratorMapValue,
   PopoverOrchestratorParam,
   PopoverOrchestratorShowParam,
   ToastOrchestratorArrayValue,
   ToastOrchestratorShowParam,
+  TooltipOrchestratorMapValue,
   TooltipOrchestratorParam,
   TooltipOrchestratorShowParam,
 } from '../types/ComponentOrchestratorTypes'
@@ -141,17 +143,23 @@ export type RegisterShowHideFnInput = {
   toggle: () => void
   show: () => void
   hide: (trigger?: string) => void
+  registerTrigger: (trigger: string, el: Element) => void
+  unregisterTrigger: (trigger: string, el: Element, clean: boolean) => void
+}
+
+export interface RegisterShowHideMapValue {
+  value: boolean
+  toggle: () => void
+  show: () => void
+  hide: (trigger?: string) => void
+  registerTrigger: (trigger: string, el: Element) => void
+  unregisterTrigger: (trigger: string, el: Element, clean: boolean) => void
 }
 export interface RegisterShowHideValue {
   (input: RegisterShowHideFnInput): {
     unregister: () => void
   }
-  map: Readonly<
-    Record<
-      string,
-      {value: boolean; toggle: () => void; show: () => void; hide: (trigger?: string) => void}
-    >
-  >
+  map: Readonly<Record<string, RegisterShowHideMapValue>>
 }
 export const globalShowHideStorageInjectionKey: InjectionKey<RegisterShowHideValue> =
   createBvnPluginInjectionKey('globalShowHideStorage')
@@ -200,7 +208,7 @@ export const buttonGroupKey: InjectionKey<boolean> = createBvnInjectionKey('butt
 export const toastPluginKey: InjectionKey<{
   toasts: Ref<ToastOrchestratorArrayValue[]>
   _setIsAppend: (value: boolean) => void
-  show: (obj: ToastOrchestratorShowParam) => ControllerKey
+  show: (obj: ToastOrchestratorShowParam) => Promise<boolean | null>
   remove: (self: ControllerKey) => void
   leave: (self: ControllerKey) => void
 }> = createBvnPluginInjectionKey('toast')
@@ -214,11 +222,11 @@ export const modalControllerPluginKey: InjectionKey<{
 }> = createBvnPluginInjectionKey('modalController')
 
 export const popoverPluginKey: InjectionKey<{
-  popovers: Ref<Map<ControllerKey, PopoverOrchestratorParam>>
+  popovers: Ref<Map<ControllerKey, PopoverOrchestratorMapValue>>
   popover: (obj: PopoverOrchestratorShowParam) => ControllerKey
   setPopover: (self: ControllerKey, val: Partial<PopoverOrchestratorParam>) => void
   removePopover: (self: ControllerKey) => void
-  tooltips: Ref<Map<ControllerKey, TooltipOrchestratorParam>>
+  tooltips: Ref<Map<ControllerKey, TooltipOrchestratorMapValue>>
   tooltip: (obj: TooltipOrchestratorShowParam) => ControllerKey
   setTooltip: (self: ControllerKey, val: Partial<TooltipOrchestratorParam>) => void
   removeTooltip: (self: ControllerKey) => void

@@ -137,8 +137,8 @@ export default defineConfig({
         api: 'modern-compiler',
         charset: false,
         silenceDeprecations: ['mixed-decls', 'color-functions', 'global-builtin', 'import'],
-      }
-    }
+      },
+    },
   },
 
   plugins: [

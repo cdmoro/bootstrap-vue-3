@@ -90,7 +90,7 @@ describe('popover', () => {
 
   it('second child contains prop content', () => {
     const wrapper = mount(BPopover, {
-      props: {content: 'foobar', modelValue: true},
+      props: {body: 'foobar', modelValue: true},
     })
     const $div = wrapper.get('div.popover-body')
     expect($div.text()).toBe('foobar')
@@ -98,7 +98,7 @@ describe('popover', () => {
 
   it('contains slot default if both slot and prop exists', () => {
     const wrapper = mount(BPopover, {
-      props: {content: 'propbar', modelValue: true},
+      props: {body: 'propbar', modelValue: true},
       slots: {default: '<div class="trigger">slotbar</div>'},
     })
     const $div = wrapper.get('div.trigger')

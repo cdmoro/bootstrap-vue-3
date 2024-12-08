@@ -33,7 +33,7 @@ import {useTemplateRef} from 'vue'
 import BDropdown from '../BDropdown/BDropdown.vue'
 import type {BDropdownProps} from '../../types/ComponentProps'
 import {useDefaults} from '../../composables/useDefaults'
-import type {showHideEmits} from '../../composables/useShowHide'
+import type {BDropdownEmits} from '../../types/ComponentEmits'
 
 const _props = withDefaults(defineProps<Omit<BDropdownProps, 'modelValue'>>(), {
   ariaLabel: undefined,
@@ -75,11 +75,7 @@ const _props = withDefaults(defineProps<Omit<BDropdownProps, 'modelValue'>>(), {
 })
 const props = useDefaults(_props, 'BNavItemDropdown')
 
-const emit = defineEmits<
-  {
-    click: [event: MouseEvent]
-  } & showHideEmits
->()
+const emit = defineEmits<BDropdownEmits>()
 
 const modelValue = defineModel<Exclude<BDropdownProps['modelValue'], undefined>>({default: false})
 

@@ -18,13 +18,13 @@ export const vBTooltip: Directive<ElementWithPopper> = {
 
     const text = resolveContent(binding.value, el)
 
-    if (!text.content && !text.title) return
+    if (!text.body && !text.title) return
     el.$__binding = JSON.stringify([binding.modifiers, binding.value])
     bind(el, binding, {
       noninteractive: true,
       ...(defaults['BTooltip'] || {}),
       ...resolveDirectiveProps(binding, el),
-      title: text.title ?? text.content ?? '',
+      title: text.title ?? text.body ?? '',
       tooltip: isActive,
     })
   },
@@ -36,7 +36,7 @@ export const vBTooltip: Directive<ElementWithPopper> = {
 
     const text = resolveContent(binding.value, el)
 
-    if (!text.content && !text.title) return
+    if (!text.body && !text.title) return
     delete binding.oldValue
     if (el.$__binding === JSON.stringify([binding.modifiers, binding.value])) return
     unbind(el)
@@ -44,7 +44,7 @@ export const vBTooltip: Directive<ElementWithPopper> = {
       noninteractive: true,
       ...(defaults['BTooltip'] || {}),
       ...resolveDirectiveProps(binding, el),
-      title: text.title ?? text.content ?? '',
+      title: text.title ?? text.body ?? '',
       tooltip: isActive,
     })
     el.$__binding = JSON.stringify([binding.modifiers, binding.value])

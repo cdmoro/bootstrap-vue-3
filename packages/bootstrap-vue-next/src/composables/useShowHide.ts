@@ -25,17 +25,6 @@ export const fadeBaseTransitionProps = {
   css: true,
 }
 
-export interface showHideEmits {
-  'hide': [value: BvTriggerableEvent]
-  'hide-prevented': [value: BvTriggerableEvent]
-  'hidden': [value: BvTriggerableEvent]
-  'show': [value: BvTriggerableEvent]
-  'show-prevented': [value: BvTriggerableEvent]
-  'shown': [value: BvTriggerableEvent]
-  'toggle': [value: BvTriggerableEvent]
-  'toggle-prevented': [value: BvTriggerableEvent]
-}
-
 interface TransitionProps {
   onBeforeEnter?: (el: Element) => void
   onEnter?: (el: Element) => void
@@ -202,6 +191,17 @@ export const useShowHide = (
     renderRef.value = true
     renderBackdropRef.value = true
     requestAnimationFrame(() => {
+      if (localNoAnimation.value || props.delay === undefined) {
+        showRef.value = true
+        options.showFn?.()
+        if (!modelValue.value) {
+          noAction = true
+          nextTick(() => {
+            modelValue.value = true
+          })
+        }
+        return
+      }
       showTimeout = setTimeout(
         () => {
           showRef.value = true
@@ -213,24 +213,23 @@ export const useShowHide = (
             })
           }
         },
-        localNoAnimation.value
-          ? 0
-          : typeof props.delay === 'number'
-            ? props.delay
-            : props.delay?.show || 0
+        typeof props.delay === 'number' ? props.delay : props.delay?.show || 0
       )
     })
   }
 
+  let leaveTrigger: string | undefined
   const hide = (trigger?: string) => {
     if (!showRef.value) return
+    if (typeof trigger !== 'string') trigger = undefined
+    leaveTrigger = trigger
     const event = buildTriggerableEvent('hide', {cancelable: true, trigger})
     const event2 = buildTriggerableEvent(trigger || 'ignore', {cancelable: true, trigger})
     if (
       (trigger === 'backdrop' && props.noCloseOnBackdrop) ||
       (trigger === 'esc' && props.noCloseOnEsc)
     ) {
-      emit('hide-prevented', buildTriggerableEvent('hide-prevented'))
+      emit('hide-prevented', buildTriggerableEvent('hide-prevented', {trigger}))
       return
     }
     if (showTimeout) {
@@ -243,7 +242,7 @@ export const useShowHide = (
     emit('hide', event)
 
     if (event.defaultPrevented || event2.defaultPrevented) {
-      emit('hide-prevented', buildTriggerableEvent('hide-prevented'))
+      emit('hide-prevented', buildTriggerableEvent('hide-prevented', {trigger}))
       if (!modelValue.value) {
         nextTick(() => {
           noAction = true
@@ -252,6 +251,7 @@ export const useShowHide = (
       }
       return
     }
+    trapActive.value = false
     setTimeout(
       () => {
         isLeaving.value = true
@@ -285,6 +285,24 @@ export const useShowHide = (
       show()
     }
   }
+  const triggerRegistry: {trigger: string; el: Element}[] = []
+  const registerTrigger = (trigger: string, el: Element) => {
+    triggerRegistry.push({trigger, el})
+    el.addEventListener(trigger, toggle)
+    checkVisibility(el)
+  }
+  const unregisterTrigger = (trigger: string, el: Element, clean = true) => {
+    const idx = triggerRegistry.findIndex((t) => t?.trigger === trigger && t.el === el)
+    if (idx > -1) {
+      triggerRegistry.splice(idx, 1)
+      el.removeEventListener(trigger, toggle)
+      if (clean) {
+        el.removeAttribute('aria-expanded')
+        el.classList.remove('collapsed')
+        el.classList.remove('not-collapsed')
+      }
+    }
+  }
 
   const appRegistry = inject(
     globalShowHideStorageInjectionKey,
@@ -295,10 +313,26 @@ export const useShowHide = (
     show,
     hide,
     value: readonly(showRef),
+    registerTrigger,
+    unregisterTrigger,
+  })
+  const checkVisibility = (el: Element) => {
+    el.setAttribute('aria-expanded', modelValue.value ? 'true' : 'false')
+    el.classList.toggle('collapsed', !modelValue.value)
+    el.classList.toggle('not-collapsed', !!modelValue.value)
+  }
+
+  watch(modelValue, () => {
+    triggerRegistry.forEach((t) => {
+      checkVisibility(t.el)
+    })
   })
 
   onBeforeUnmount(() => {
     appRegistry?.unregister()
+    triggerRegistry.forEach((t) => {
+      t.el.removeEventListener(t.trigger, toggle)
+    })
   })
 
   const lazyLoadCompleted = ref(false)
@@ -338,11 +372,15 @@ export const useShowHide = (
     if (localTemporaryHide.value) {
       localTemporaryHide.value = false
     }
+    requestAnimationFrame(() => {
+      trapActive.value = true
+    })
   }
   const onBeforeLeave = (el: Element) => {
     if (!isLeaving.value) isLeaving.value = true
     options.transitionProps?.onBeforeLeave?.(el)
     props.transitionProps?.onBeforeLeave?.(el)
+    trapActive.value = false
   }
   const onLeave = (el: Element) => {
     isVisible.value = false
@@ -350,7 +388,7 @@ export const useShowHide = (
     props.transitionProps?.onLeave?.(el)
   }
   const onAfterLeave = (el: Element) => {
-    emit('hidden', buildTriggerableEvent('hidden'))
+    emit('hidden', buildTriggerableEvent('hidden', {trigger: leaveTrigger}))
     options.transitionProps?.onAfterLeave?.(el)
     props.transitionProps?.onAfterLeave?.(el)
     isLeaving.value = false
@@ -373,21 +411,6 @@ export const useShowHide = (
       (props.lazy === true && lazyLoadCompleted.value === true && props.unmountLazy === false)
   )
   const trapActive = ref(false)
-  watch(isVisible, (val) => {
-    // This is a hack to ensure that the trapActive is set after the isVisible
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            // timeout to make the test pass... what a hack!
-            setTimeout(() => {
-              trapActive.value = val
-            }, 32)
-          })
-        })
-      })
-    })
-  })
   const backdropVisible = ref(false)
   const backdropReady = ref(false)
 

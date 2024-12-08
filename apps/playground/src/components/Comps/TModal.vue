@@ -67,7 +67,7 @@ import {computed, h, onMounted, ref} from 'vue'
 import {
   BModal,
   type ColorVariant,
-  type OrchestratedModal,
+  // type OrchestratedModal,
   useModalController,
 } from 'bootstrap-vue-next'
 
@@ -78,8 +78,11 @@ const showModal3 = ref(false)
 const noClose = ref(true)
 const isModalVisible = ref(false)
 
-const firstRef = ref<OrchestratedModal>({
+// TODO: This should be ref<OrchestratedModal>, but it's not working
+// const firstRef = ref<OrchestratedModal>({
+const firstRef = ref({
   body: `${Math.random()}`,
+  title: 'foobar',
 })
 
 onMounted(() => {
@@ -92,42 +95,35 @@ const {show, modals} = useModalController()
 
 const showFns = {
   basicNoReactive: () => {
-    show?.({
-      props: {
-        title: 'foobar',
-        okVariant: 'danger',
-      },
+    show({
+      title: 'foobar',
+      okVariant: 'danger',
     })
   },
   basicCustomComponent: () => {
-    show?.({
-      component: h(BModal, null, {default: () => 'foobar!'}),
-      props: {
-        okVariant: 'info',
-      },
+    show({
+      slots: {default: h('div', null, {default: () => 'foobar!'})},
+
+      okVariant: 'info',
     })
   },
   simpleRefProps: () => {
-    show?.({
-      props: firstRef,
-    })
+    show(firstRef)
   },
   dynamicRefProps: () => {
-    show?.({
-      props: computed(() => ({
+    show(
+      computed(() => ({
         ...firstRef.value,
         okVariant: (Number.parseInt(firstRef.value.body?.charAt(2) ?? '0') % 2 === 0
           ? 'danger'
           : 'info') as ColorVariant,
-      })),
-    })
+      }))
+    )
   },
   getterFunction: () => {
-    show?.({
-      props: () => ({
-        title: firstRef.value.body,
-      }),
-    })
+    show(() => ({
+      title: firstRef.value.body,
+    }))
   },
   // Demonstration psuedocode, you can import a component and use it
   // importedComponent: () => {

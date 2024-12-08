@@ -2,33 +2,36 @@
   <ConditionalTeleport :to="props.teleportTo" :disabled="props.teleportDisabled">
     <div id="__BVID__modal-container" v-bind="$attrs">
       <component
-        :is="modal.component ?? BModal"
-        v-for="[self, modal] in tools.modals?.value"
+        :is="_component ?? BModal"
+        v-for="[self, {component: _component, promise, isConfirm, slots, ...val}] in tools.modals
+          ?.value"
         :key="self"
-        v-bind="modal.props"
-        v-model="modal.props._modelValue"
+        v-bind="val"
         initial-animation
         :teleport-disabled="true"
-        @update:model-value="tools.leave?.(self)"
         @hide="
           (e: BvTriggerableEvent) => {
             // These following are confirm rules, otherwise we always resolve true
-            if (modal.props._isConfirm === true) {
+            if (isConfirm === true) {
               if (e.trigger === 'ok') {
-                modal.props._promise.resolve(true)
+                promise.resolve(true)
                 return
               }
               if (e.trigger === 'cancel') {
-                modal.props._promise.resolve(false)
+                promise.resolve(false)
                 return
               }
-              modal.props._promise.resolve(null)
+              promise.resolve(null)
             }
-            modal.props._promise.resolve(true)
+            promise.resolve(true)
           }
         "
         @hidden="tools.remove?.(self)"
-      />
+      >
+        <template v-for="(comp, slot) in slots" #[slot]="scope" :key="slot">
+          <component :is="comp" v-bind="scope" />
+        </template>
+      </component>
     </div>
   </ConditionalTeleport>
 </template>

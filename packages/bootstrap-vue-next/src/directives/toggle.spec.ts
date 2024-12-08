@@ -3,9 +3,10 @@ import {afterEach, describe, expect, it, vi} from 'vitest'
 import {nextTick} from 'vue'
 import {vBToggle as VBToggle} from './BToggle'
 import {asyncTimeout} from '../../tests/utils'
+import BCollapse from '../components/BCollapse/BCollapse.vue'
+import {createBootstrap} from '../plugins'
 
 // Emitted control event for collapse (emitted to collapse)
-const EVENT_TOGGLE = 'bv-toggle'
 
 describe('toggle directive', () => {
   enableAutoUnmount(afterEach)
@@ -16,27 +17,27 @@ describe('toggle directive', () => {
       directives: {
         bToggle: VBToggle,
       },
+      components: {BCollapse},
       props: {
         target: {
           type: [String, Array],
           default: null,
         },
       },
-      mounted() {
-        document.getElementById('test1')?.addEventListener(EVENT_TOGGLE, spy1)
-        document.getElementById('test2')?.addEventListener(EVENT_TOGGLE, spy2)
+      methods: {
+        spy1,
+        spy2,
       },
-      destroy() {
-        document.getElementById('test1')?.removeEventListener(EVENT_TOGGLE, spy1)
-        document.getElementById('test2')?.removeEventListener(EVENT_TOGGLE, spy2)
-      },
-      template: `<button v-b-toggle="target">button</button><div id="test1"></div><div id="test2"></div>`,
+      template: `<button v-b-toggle="target">button</button><BCollapse @toggle="spy1" id="test1">collapse 1</BCollapse><BCollapse @toggle="spy2" id="test2">collapse 2</BCollapse>`,
     }
 
     const wrapper = mount(App, {
       attachTo: document.body,
       props: {
         target: 'test1',
+      },
+      global: {
+        plugins: [createBootstrap()],
       },
     })
 
@@ -67,18 +68,16 @@ describe('toggle directive', () => {
     expect(spy1).toHaveBeenCalledTimes(1)
     expect(spy2).toHaveBeenCalledTimes(1)
 
-    // Since there is no target collapse to respond with the
-    // current state, the classes and attrs remain the same
     expect($button.attributes('aria-controls')).toBe('test1 test2')
-    expect($button.attributes('aria-expanded')).toBe('false')
-    expect($button.classes()).toContain('collapsed')
-    expect($button.classes()).not.toContain('not-collapsed')
+    expect($button.attributes('aria-expanded')).toBe('true')
+    expect($button.classes()).toContain('not-collapsed')
+    expect($button.classes()).not.toContain('collapsed')
 
     await wrapper.setProps({target: ['test2']})
     expect($button.attributes('aria-controls')).toBe('test2')
-    expect($button.attributes('aria-expanded')).toBe('false')
-    expect($button.classes()).toContain('collapsed')
-    expect($button.classes()).not.toContain('not-collapsed')
+    expect($button.attributes('aria-expanded')).toBe('true')
+    expect($button.classes()).toContain('not-collapsed')
+    expect($button.classes()).not.toContain('collapsed')
     expect(spy1).toHaveBeenCalledTimes(1)
     expect(spy2).toHaveBeenCalledTimes(1)
 

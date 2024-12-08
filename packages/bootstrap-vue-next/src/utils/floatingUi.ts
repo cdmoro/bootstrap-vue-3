@@ -23,13 +23,13 @@ export const resolveActiveStatus = (values: DirectiveBinding['value']): boolean 
 export const resolveContent = (
   values: DirectiveBinding['value'],
   el: HTMLElement
-): {title?: string; content?: string} => {
+): {title?: string; body?: string} => {
   const isActive = resolveActiveStatus(values)
   if (!isActive) return {}
 
   const missingBindingValue =
     typeof values === 'undefined' ||
-    (typeof values === 'object' && !values.title && !values.content)
+    (typeof values === 'object' && !values.title && !values.content && !values.body)
   const title = el.getAttribute('title') || el.getAttribute('data-original-title')
   if (missingBindingValue) {
     if (title) {
@@ -37,19 +37,25 @@ export const resolveContent = (
       el.setAttribute('data-original-title', title)
 
       return {
-        content: title,
+        body: title,
       }
     }
     return {}
   }
   if (typeof values === 'string') {
     return {
-      content: values,
+      body: values,
     }
   }
+
+  // TODO: deprication remove warning in 2025-02
+  if (values?.content)
+    // eslint-disable-next-line no-console
+    console.warn('v-b-popover/v-b-tooltip: `content` is deprecated, use `body` instead')
+
   return {
     title: values?.title ? values?.title : undefined,
-    content: values?.content ? values?.content : undefined,
+    body: values?.body ? values?.body : values?.content ? values?.content : undefined,
   }
 }
 
@@ -72,11 +78,10 @@ export const resolveDirectiveProps = (
         : binding.modifiers.top
           ? 'top'
           : undefined,
-  html: true,
   ...(typeof binding.value === 'object' ? binding.value : {}),
   ...(binding.modifiers.interactive ? {noninteractive: false} : {}),
   title: null,
-  content: null,
+  body: null,
 })
 
 export interface ElementWithPopper extends HTMLElement {
