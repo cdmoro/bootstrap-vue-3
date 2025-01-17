@@ -48,4 +48,4 @@ export const showHideProps = {
     default: false,
     description: "When 'true', open without animation",
   },
-} as const satisfies Record<keyof BvnComponentProps['showHide'], PropertyReference>
+} as const satisfies Record<keyof BvnComponentProps['showHide'] | 'modelValue', PropertyReference>
