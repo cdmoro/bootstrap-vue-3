@@ -16,7 +16,7 @@ To set up unplugin-icons, you can read directly from their documentation [here](
 
 #### Preferred Installation
 
-The preferred installation makes use of [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components) as it follows the same principles as the [preferred installation](../getting-started/#preferred-installation) for our core package.
+The preferred installation makes use of [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components) as it follows the same principles as the [preferred installation](../docs#install) for our core package.
 
 To start, install the necessary packages:
 
